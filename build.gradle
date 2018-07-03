@@ -1,0 +1,23 @@
+// Copyright (c) all rights reserved
+// I am lazy right now, I will mess around with copyright/licensing later if need be.
+
+apply plugin: 'java'
+
+group = 'io.github.xcube16'
+version = '0.1-SNAPSHOT'
+description = 'An in-memory data intermediate representation designed to make serialization easy inspired by SpongeAPI\'s DataView'
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://repo.spongepowered.org/maven'
+    }
+}
+
+dependencies {
+    compile 'com.google.inject:guice:4.1.0'
+    compile 'com.google.code.findbugs:jsr305:3.0.1'
+
+    compile 'org.spongepowered:configurate-hocon:3.5'
+}

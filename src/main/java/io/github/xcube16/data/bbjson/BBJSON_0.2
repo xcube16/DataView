@@ -1,0 +1,279 @@
+Copyright (c) xcube16 <xcube16@gmail.com>
+// I don't know how best to license this...
+// UBJSON form witch this was originally based on is licensed under Apache 2.0
+
+Better Binary JSON (fork of UBJSON, ubjson.org)
+
+(vary rough draft... still need to work out all the copyrights, credits, and  other stuff)
+
+types:
+    no-op  ' '     can be used as keep-alive
+    null    N      a null type
+
+    true    T      a true type
+    false   F      a false type
+
+    char    u      a utf-8 string containing only 1 Unicode code point (most of the time its 1 byte, but can be longer)
+    string  U      a utf-8 string
+
+    int8    B      a byte
+    int16   s, S   a short int (little, and big endian)
+    int32   i, I   an int      (little, and big endian)
+    int64   l, L   a long int  (little, and big endian)
+
+    float   ., ,   a float32 (little, and big endian)
+    double  :, ;   a float64 (little, and big endian)
+    H num   H      a utf-8 string representing a number
+
+    object  {      an object
+    array   [      an array
+
+    special case for objects and arrays:
+    
+    count specifyer              #     (see Array or Object for more detail)
+    count and type specifyer     $     (see Array or Object for more detail)
+    
+
+general format is the same as ubjson: [type, 1-byte char]([integer numeric length])([data])
+
+
+---- Object ----
+
+format: [{]([#][count] or [$][count][type] or [N])
+            [string][value]
+            [string][value]
+            ...
+        ([}] if count is not specifyed)
+
+Count or count and type may be specifyed up front as an optimization.
+If type is specifyed, the [type] is simply omited form all the elements.
+
+Count must be a positive integer (int8, int16, int32, int64).
+
+example (json):
+{
+    "foo": 25
+    "bar": 0.3
+    "triangles": 36
+}
+
+example (bbjson, no optimization):
+[{][N]
+    [B][3][foo][B][25]
+    [B][3][bar][.][0.3]
+    [B][9][triangles][B][36]
+[}]
+
+example (bbjson, count optimized):
+[{][#][B][3]
+    [B][3][foo][B][25]
+    [B][3][bar][.][0.3]
+    [B][9][triangles][B][36]
+
+example (bbjson, count and type optimized): (note: this example uses float for everything, so in this case it does not really save space)
+[{][$][B][3][.]
+    [B][3][foo][25.0]
+    [B][3][bar][0.3]
+    [B][9][triangles][36.0]
+
+
+---- Array ----
+
+format: [[]([#][count] or [$][count][type] or [N])
+            [value]
+            [value]
+            ...
+        ([]] if count is not specifyed)
+
+Count or count and type may be specifyed up front as an optimization.
+
+Count must be a positive integer (int8, int16, int32, int64).
+
+If type is specifyed, the [type] is simply omited form all the elements.
+
+example (json):
+[1.0, 2.1, 3.2, 4.3]
+
+example (bbjson):
+[[][N]
+    [.][1.0]
+    [.][2.1]
+    [.][3.2]
+    [.][4.3]
+[]]
+
+example (bbjson, count optimized)
+[[][#][B][4]
+    [.][1.0]
+    [.][2.1]
+    [.][3.2]
+    [.][4.3]
+
+example (bbjson, count and type optimized)
+[[][$][B][4][.]
+    [1.0]
+    [2.1]
+    [3.2]
+    [4.3]
+
+
+---- No Operation ----
+
+format: [ ] // a space char
+
+No-op is a type that basicly says "parcer, please ignore this".
+It is usefull as a keep-alive when streaming, or to erace data with out re-sizing the entire structure.
+
+It may also be usefull as pading if something needs to be aligned.
+
+No-op may only be used in arrays and objects that are not optimized (no count and or type pre set)
+It can NOT be used like this in an object: [B][11][WillNotWork][ ]
+
+example array:
+[[][N]
+    [B][1]
+    [ ]
+    [ ]
+    [B][2]
+    [B][3]
+    [ ]
+    [B][4]
+[]]
+
+is equivalent to:
+[[][N]
+    [B][1]
+    [B][2]
+    [B][3]
+    [B][4]
+[]]
+
+example object:
+[{][N]
+    [ ]
+    [B][3][one][B][1]
+    [B][3][two][B][2]
+    [ ]
+    [ ]
+    [B][3][three][B][3]
+[}]
+
+
+---- Null ----
+
+format: [N]
+
+The null type is equivalent to the null value from the JSON specification.
+
+
+---- True ----
+
+format: [T]
+
+A boolean type restricted to a value of true
+
+
+---- False ----
+
+format: [F]
+
+A boolean type restricted to a value of false
+
+
+---- Character ----
+
+format: [u][one Unicode code point encoded in utf-8]
+
+The char type can be any Unicode char encoded in utf-8.
+A char can be more than one byte.
+
+
+---- String ----
+
+format: [U][integer length in bytes][utf-8 encoded string]
+
+The string type is equivalent to the string type from the JSON specification,
+with the restriction that it must be encoded in utf-8.
+
+Length must be a positive integer (int8, int16, int32, int64).
+
+
+---- int8 (Number) ----
+
+format: [B][value]
+
+A number type restricted to a signed (two's complement) 8 bit int/byte.
+This can be used to store integers form -128 to 127 (-2^8 to 2^8-1).
+
+example: [B][55]
+
+This type can be usefull when storing binary data...
+
+example: (storing 0xCAFFBABE)
+[[][$][B][4][B]
+    [0xCA]
+    [0xFF]
+    [0xBA]
+    [0xBE]
+
+
+---- int16 (Number) ----
+
+big endian format:    [S][value in big endian byte order]
+little endian format: [s][value in little endian byte order]
+
+A number type restricted to a signed (two's complement) 16 bit int.
+This can be used to store integers from -32,768 to 32,767 (-2^16 to 2^16-1).
+
+example: [S][10000 (0x27 0x10)]
+example: [s][10000 (0x10 0x27)]
+
+
+---- int32 (Number) ----
+
+big endian format:    [I][value in big endian byte order]
+little endian format: [i][value in little endian byte order]
+
+A number type restricted to a signed (two's complement) 32 bit int.
+This can be used to store integers from -2,147,483,648 to 2,147,483,647 (-2^32 to 2^32-1).
+
+example: [I][1200000000 (0x47 0x86 0x8C 0x00)]
+example: [i][1200000000 (0x00 0x8C 0x86 0x00)]
+
+
+---- int64 (Number) ----
+
+big endian format:    [L][value in big endian byte order]
+little endian format: [l][value in little endian byte order]
+
+A number type restricted to a signed (two's complement) 64 bit int.
+This can be used to store integers from -2^64 to 2^64-1.
+
+example: [I][3000000000000 (0x00 0x00 0x02 0xBA 0x7D 0xEF 0x30 0x00)]
+example: [i][3000000000000 (0x00 0x30 0xEF 0x7D 0xBA 0x02 0x00 0x00)]
+
+
+---- Float (Number) ----
+
+big endian format:    [,][value in big endian byte order]
+little endian format: [.][value in little endian byte order]
+
+An IEEE 754 single-precision floating point number (binary32)
+
+example: [,][3.14 (0x40 0x48 0xF5 0xC3)]
+example: [.][3.14 (0xC3 0xF5 0x48 0x40)]
+
+
+---- Double (Number) ----
+
+big endian format:    [,][value in big endian byte order]
+little endian format: [.][value in little endian byte order]
+
+An IEEE 754 single-precision floating point number (binary32)
+
+example: [,][0.1 (0x3F 0xB9 0x99 0x99 0x99 0x99 0x99 0x9A)]
+example: [.][0.1 (0x9A 0x99 0x99 0x99 0x99 0x99 0xB9 0x3F)]
+
+
+
+
