@@ -79,9 +79,6 @@ import java.util.function.Consumer;
  * * float[]<br/>
  * * double[]<br/>
  *
- * TODO: interfaces for immutable DataView structures that do not include any mutator methods
- * TODO: (ex: ImmutaleDataView, ImmutableDataList, ImmutableDataValue or maybe MutDataView and DataView)
- *
  * @param <K> The key type
  */
 public interface DataView<K> {
@@ -155,8 +152,9 @@ public interface DataView<K> {
     DataList createList(K key);
 
     /**
-     * Gets an immutable {@link DataValue} by key, if available.
-     * TODO: enforce immutability! for now just don't be stupid!
+     * Gets an {@link DataValue} by key, if available.
+     *
+     * <p>Mutating the returned DataValue will have no effect on this {@link DataView}</p>
      *
      * <p>If the data residing at the key is not present,
      * an absent is returned.</p>

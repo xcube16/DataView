@@ -56,12 +56,14 @@ public abstract class AbstractDataMap extends AbstractDataView<String> implement
         } else if (value instanceof DataList) { // Structure Allowed Types
             copyDataList(key, (DataList) value);
         } else if (value instanceof DataValue) { // Structure Allowed Types
-            ((DataValue) value).get().ifPresent(v -> this.setRaw(key, v)); // FIXME: Should setRaw() really handle MemoryData(Map/List)'s?
+            ((DataValue) value).get().ifPresent(v -> this.set(key, v));
 
         } else if (value instanceof DataSerializable) { // Serializable Object
             DataValue dataValue = new MemoryDataValue();
             ((DataSerializable) value).toContainer(dataValue);
-            dataValue.get().ifPresent(v -> this.setRaw(key, v)); // FIXME: Should setRaw() really handle MemoryData(Map/List)'s?
+            /* We don't need to clone any DataViews that are inside the MemoryDataValue
+            as it is the only one that could have created them. */
+            dataValue.get().ifPresent(v -> this.setRaw(key, v));
 
         } else if (value instanceof Enum) { // common java stuff
             this.setRaw(key, ((Enum) value).name());

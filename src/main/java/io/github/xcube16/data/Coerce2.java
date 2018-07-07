@@ -504,7 +504,6 @@ public final class Coerce2 {
         if (obj instanceof DataMap) {
             return Optional.of((DataMap) obj);
         }
-        // TODO: turn lists/arrays into DataMaps by turning indexes into keys?
         return Optional.empty();
     }
 
