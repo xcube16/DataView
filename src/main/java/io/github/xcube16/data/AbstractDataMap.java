@@ -34,48 +34,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 public abstract class AbstractDataMap extends AbstractDataView<String> implements DataMap {
 
-
-    /**
-     * An internal method that sets a raw value in the underlying data structure.
-     * The key and value are already be sanitized and ready to go.
-     */
-    protected abstract void setRaw(String key, Object value);
-
     @Override
-    @SuppressWarnings("unchecked")
     public DataMap set(String key, Object value) {
-        // TODO: this TODO message is a duplicate of one another set() method... o and the code
-        checkNotNull(key, "key");
-        checkNotNull(value, "value");
-
-        if (isPrimitive(value) || isPrimitiveArray(value)) { // Primitive Allowed Types or Array Allowed Types
-            this.setRaw(key, value);
-
-        } else if (value instanceof DataMap) { // Structure Allowed Types
-            copyDataMap(key, (DataMap) value);
-        } else if (value instanceof DataList) { // Structure Allowed Types
-            copyDataList(key, (DataList) value);
-        } else if (value instanceof DataValue) { // Structure Allowed Types
-            ((DataValue) value).get().ifPresent(v -> this.set(key, v));
-
-        } else if (value instanceof DataSerializable) { // Serializable Object
-            DataValue dataValue = new MemoryDataValue();
-            ((DataSerializable) value).toContainer(dataValue);
-            /* We don't need to clone any DataViews that are inside the MemoryDataValue
-            as it is the only one that could have created them. */
-            dataValue.get().ifPresent(v -> this.setRaw(key, v));
-
-        } else if (value instanceof Enum) { // common java stuff
-            this.setRaw(key, ((Enum) value).name());
-        } else if (value instanceof Map) { // common java stuff
-            copyMap(key, (Map) value);
-        } else if (value instanceof Collection) { // common java stuff
-            copyCollection(key, (Collection) value);
-
-        } else {
-            // nope, KU-BOOM!
-            throw new IllegalArgumentException(value.getClass() + " can not be serialized");
-        }
+        super.set(key, value);
         return this;
     }
 
