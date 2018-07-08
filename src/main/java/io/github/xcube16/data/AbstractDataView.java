@@ -54,9 +54,11 @@ public abstract class AbstractDataView<K> implements DataView<K> {
             this.setRaw(key, value);
 
         } else if (value instanceof DataMap) { // Structure Allowed Types
-            copyDataMap(key, (DataMap) value);
+            checkArgument(!value.equals(this), "Cannot insert self-referencing Objects!");
+            copyDataMap(this.createMap(key), (DataMap) value);
         } else if (value instanceof DataList) { // Structure Allowed Types
-            copyDataList(key, (DataList) value);
+            checkArgument(!value.equals(this), "Cannot insert self-referencing Objects!");
+            copyDataList(this.createList(key), (DataList) value);
         } else if (value instanceof DataValue) { // Structure Allowed Types
             ((DataValue) value).get().ifPresent(v -> this.set(key, v));
 
@@ -70,9 +72,9 @@ public abstract class AbstractDataView<K> implements DataView<K> {
         } else if (value instanceof Enum) { // common java stuff
             this.setRaw(key, ((Enum) value).name());
         } else if (value instanceof Map) { // common java stuff
-            copyMap(key, (Map) value);
+            copyMap(this.createMap(key), (Map) value);
         } else if (value instanceof Collection) { // common java stuff
-            copyCollection(key, (Collection) value);
+            copyCollection(this.createList(key), (Collection) value);
 
         } else {
             // nope, KU-BOOM!
@@ -110,40 +112,44 @@ public abstract class AbstractDataView<K> implements DataView<K> {
                 value instanceof double[];
     }
 
-    protected void copyCollection(K key, Collection<?> value) {
-        DataList sublist = this.createList(key);
-        for (Object object : value) {
-            sublist.add(object);
+    /**
+     * Copies everything {@code form} a {@link Collection} {@code to} a {@link DataList}
+     */
+    static void copyCollection(DataList to, Collection<?> from) {
+        for (Object object : from) {
+            to.add(object);
         }
     }
 
-    protected void copyMap(K key, Map<?, ?> value) {
-        DataMap submap = this.createMap(key);
-        for (Map.Entry<?, ?> entry : value.entrySet()) {
+    /**
+     * Copies everything {@code form} a {@link Map} {@code to} a {@link DataMap}
+     */
+    static void copyMap(DataMap to, Map<?, ?> from) {
+        for (Map.Entry<?, ?> entry : from.entrySet()) {
             if (entry.getKey() instanceof String) {
-                submap.set((String) entry.getKey(), entry.getValue());
+                to.set((String) entry.getKey(), entry.getValue());
             } else {
                 throw new IllegalArgumentException("map had an unsupported key type");
             }
         }
     }
 
+    /**
+     * Copies everything {@code form} one {@link DataMap} {@code to} another {@link DataMap}
+     */
     @SuppressWarnings("ConstantConditions")
-    protected void copyDataMap(K key, DataMap value) {
-        checkArgument(!value.equals(this), "Cannot insert self-referencing Objects!");
-
-        DataMap submap = this.createMap(key);
-        for (String subkey : value.getKeys()) {
-            submap.set(subkey, value.get(subkey).get());
+    static void copyDataMap(DataMap to, DataMap from) {
+        for (String subkey : from.getKeys()) {
+            to.set(subkey, from.get(subkey).get());
         }
     }
 
-    protected void copyDataList(K key, DataList value) {
-        checkArgument(!value.equals(this), "Cannot insert self-referencing Objects!");
-
-        DataList sublist = this.createList(key);
-        for (int i = 0; i < value.size(); i++) {
-            sublist.add(value.get(i).get());
+    /**
+     * Copies everything {@code form} one {@link DataList} {@code to} another {@link DataList}
+     */
+    static void copyDataList(DataList to, DataList from) {
+        for (int i = 0; i < from.size(); i++) {
+            to.add(from.get(i).get());
         }
     }
 

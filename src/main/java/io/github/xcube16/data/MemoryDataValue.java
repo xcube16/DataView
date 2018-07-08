@@ -61,9 +61,9 @@ public class MemoryDataValue implements DataValue {
             this.setRaw(value);
 
         } else if (value instanceof DataMap) { // Structure Allowed Types
-            copyDataMap((DataMap) value);
+            AbstractDataView.copyDataMap(this.createMap(), (DataMap) value);
         } else if (value instanceof DataList) { // Structure Allowed Types
-            copyDataList((DataList) value);
+            AbstractDataView.copyDataList(this.createList(), (DataList) value);
 
         } else if (value instanceof DataSerializable) { // Serializable Object
             ((DataSerializable) value).toContainer(this);
@@ -71,54 +71,15 @@ public class MemoryDataValue implements DataValue {
         } else if (value instanceof Enum) { // common java stuff
             this.setRaw(((Enum) value).name());
         } else if (value instanceof Map) { // common java stuff
-            copyMap((Map) value);
+            AbstractDataView.copyMap(this.createMap(), (Map) value);
         } else if (value instanceof Collection) { // common java stuff
-            copyCollection((Collection) value);
+            AbstractDataView.copyCollection(this.createList(), (Collection) value);
 
         } else {
             // nope, KU-BOOM!
             throw new IllegalArgumentException(value.getClass() + " can not be serialized");
         }
         return this;
-    }
-
-    // FIXME: duplicate code
-    private void copyCollection(Collection<?> value) {
-        DataList sublist = this.createList();
-        for (Object object : value) {
-            sublist.add(object);
-        }
-    }
-
-    // FIXME: duplicate code
-    private void copyMap(Map<?, ?> value) {
-        DataMap submap = this.createMap();
-        for (Map.Entry<?, ?> entry : value.entrySet()) {
-            if (entry.getKey() instanceof String) {
-                submap.set((String) entry.getKey(), entry.getValue());
-            } else {
-                throw new IllegalArgumentException("map had an unsupported key type");
-            }
-        }
-    }
-
-    // FIXME: duplicate code
-    @SuppressWarnings("ConstantConditions")
-    private void copyDataMap(DataMap value) {
-
-        DataMap submap = this.createMap();
-        for (String subkey : value.getKeys()) {
-            submap.set(subkey, value.get(subkey).get());
-        }
-    }
-
-    // FIXME: duplicate code
-    private void copyDataList(DataList value) {
-
-        DataList sublist = this.createList();
-        for (int i = 0; i < value.size(); i++) {
-            sublist.add(value.get(i).get());
-        }
     }
 
     private void setRaw(Object value) {
