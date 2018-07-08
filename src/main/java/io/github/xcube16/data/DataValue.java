@@ -86,8 +86,6 @@ public interface DataValue {
      */
     DataList createList();
 
-    // TODO: add create methods that work well with super classes when serializing!
-
     /**
      * Gets a {@link DataMap}, if available.
      *
