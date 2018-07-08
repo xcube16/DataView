@@ -24,7 +24,7 @@ target
 *.db
 *.sql
 *.sqlite
-*.ubj
+*.bbj
 
 # Packages #
 ############

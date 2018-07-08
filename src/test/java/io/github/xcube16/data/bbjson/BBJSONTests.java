@@ -56,11 +56,11 @@ public class BBJSONTests {
                     .add("pine-apple (apples that grow on pine trees)");
 
         // TODO: this puts a file in the project directory. Maybe unit tests should not do stuff like that.
-        FileOutputStream out = new FileOutputStream("test.ubj");
+        FileOutputStream out = new FileOutputStream("test.bbj");
         BBJSON.encode(new DataOutputStream(out), value);
         out.close();
 
-        FileInputStream in = new FileInputStream("test.ubj");
+        FileInputStream in = new FileInputStream("test.bbj");
         DataMap obj2 = BBJSON.decode(new DataInputStream(in)).getMap().get();
         in.close();
 
